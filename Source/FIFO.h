@@ -324,6 +324,53 @@ public:
         
     }
     
+	void generateResponsePath(const std::vector<float>& renderData,
+		juce::Rectangle<float> fftBounds,
+		int fftSize,
+		float binWidth,
+		float negativeInfinity)
+	{
+		auto left = fftBounds.getX();
+		auto top = fftBounds.getY();
+		auto bottom = fftBounds.getHeight();
+		auto width = fftBounds.getWidth();
+
+		int numBins = (int)fftSize / 2;
+
+		PathType p;
+		p.preallocateSpace(3 * (int)fftBounds.getWidth());
+
+		auto map = [bottom, top, negativeInfinity](float v)
+		{
+			return juce::jmap(v,
+				0.f, 2.5f,
+				float(bottom), top);
+		};
+
+		auto y = map(renderData[0]);
+		if (std::isnan(y) || std::isinf(y))
+			y = bottom;
+
+		p.startNewSubPath(left, y);
+
+		const int pathResolution = 2;
+		for (int binNum = 1; binNum < numBins; binNum += pathResolution)
+		{
+			y = map(renderData[binNum]);
+
+			if (!std::isnan(y) && !std::isinf(y))
+			{
+				auto binFreq = binNum * binWidth;
+				// auto normalizedBinX = juce::mapFromLog10(binFreq, 20.f, 20000.f);
+				auto normalizedBinX = (binFreq - 20.f) / (20000.f - 20.f);
+				int binX = std::floor(left + normalizedBinX * width);
+				p.lineTo(binX, y);
+			}
+		}
+
+		pathFifo.push(p);
+	}
+
     int getNumPathsAvailable() const
     {
         return pathFifo.getNumAvailableForReading();
@@ -337,3 +384,4 @@ public:
 private:
     FIFO<PathType> pathFifo;
 };
+

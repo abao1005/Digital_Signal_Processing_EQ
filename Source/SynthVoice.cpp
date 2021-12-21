@@ -11,6 +11,7 @@
 #include "SynthVoice.h"
 #include <vector>
 #include <cmath>
+#include <string>
 #define MY_PI 3.14159265358979323846
 
 /***********************************************************
@@ -34,6 +35,8 @@ SynthVoice::SynthVoice()
 {
 	overlap = new float[15]{ 0 };
 	fftH = new float[fftSize * 2]{ 0 };
+	fftH_freqOnly = new float[fftSize * 2]{ 0 };
+
 	fftData = new float[fftSize * 2]{ 0 };
     genFilter();
 }
@@ -96,9 +99,13 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer <float> &outputBuffer, int st
 		float fi = fftH[i + 1];
 		fftData[i] = sr * fr - si * fi;
 		fftData[i+1] = sr * fi + si * fr;
+		/*DBG(i);
+		DBG(fftData[i]);
+		DBG(fftData[i+1]);*/
+
 	}
 	forwardFFT.performRealOnlyInverseTransform(fftData);
-
+	
 	/* Overlap-Add method */
 	for (int i = 0; i < order - 1; i++)
 	{
@@ -108,17 +115,16 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer <float> &outputBuffer, int st
 		outputBuffer.addSample(0, i, fftData[j]);
 		outputBuffer.addSample(1, i, fftData[j]);
 	}
-	for (int i = 0; i < order-1; i++)
+	for (int i = 0; i < order - 1; i++)
 	{
 		overlap[i] = fftData[numSamples + i];
 	}
-
 }
 
 void SynthVoice::genFilter()
 {
     /* clear vectors */
-	for (int i = 0; i < 200; i++)
+	for (int i = 0; i < 300; i++)
 		h[i] = 0.0;
     x.clear();
     
@@ -152,11 +158,13 @@ void SynthVoice::genAllPass()
         h[i] = 0.0f;
 
 	/* FFT */
-	for (int i = 0; i < fftSize; i++)
+	for (int i = 0; i < fftSize*2; i++)
 	{
 		fftH[i] = (i < order) ? h[i] : 0;
+		fftH_freqOnly[i] = (i < order) ? h[i] : 0;
 	}
 	forwardFFT.performRealOnlyForwardTransform(fftH);
+	forwardFFT.performFrequencyOnlyForwardTransform(fftH_freqOnly);
 }
 
 void SynthVoice::genLowPass()
@@ -190,8 +198,10 @@ void SynthVoice::genLowPass()
 	for (int i = 0; i < fftSize*2; i++)
 	{
 		fftH[i] = (i < order) ? h[i] : 0;
+		fftH_freqOnly[i] = (i < order) ? h[i] : 0;
 	}
 	forwardFFT.performRealOnlyForwardTransform(fftH);
+	forwardFFT.performFrequencyOnlyForwardTransform(fftH_freqOnly);
 }
 
 void SynthVoice::genHighPass()
@@ -230,8 +240,10 @@ void SynthVoice::genHighPass()
 	for (int i = 0; i < fftSize*2; i++)
 	{
 		fftH[i] = (i < order) ? h[i] : 0;
+		fftH_freqOnly[i] = (i < order) ? h[i] : 0;
 	}
 	forwardFFT.performRealOnlyForwardTransform(fftH);
+	forwardFFT.performFrequencyOnlyForwardTransform(fftH_freqOnly);
 }
 
 void SynthVoice::genBandPass()
@@ -288,12 +300,10 @@ void SynthVoice::genBandPass()
 		}
 	}
 
-	for (int i = 0; i < fftSize; i++)
+	for (int i = 0; i < 2*fftSize; i++)
 	{
 		fftH[i] = (i < 2*order-1) ? h[i] : 0;
 	}
-	/*std::fill(fftH.begin(), fftH.end(), 0.0f);
-	std::copy(h.begin(), h.end(), fftH.begin());*/
 
 	forwardFFT.performRealOnlyForwardTransform(fftH);
 }
@@ -320,21 +330,21 @@ void SynthVoice::setOrder(int newOrder)
 
 	/* Reset overlap size */
 	delete[] overlap;
-	overlap = new float[order]{ 0 };
+	overlap = new float[order] { 0 };
 
 	/* Reset FFT size */
-	int newFFTsize = juce::nextPowerOfTwo(480 + order);
-	if (newFFTsize == fftSize) {}
-	else {
-		fftSize = newFFTsize;
-		fftOrder = std::log2(newFFTsize);
-		/* Resize fftH */
-		delete[] fftH;
-		fftH = new float[fftSize*2] {0};
-		/* Resize fftData */
-		delete[] fftData;
-		fftData = new float[fftSize*2] {0};
-	}
+	//int newFFTsize = juce::nextPowerOfTwo(480 + order-1);
+	//if (newFFTsize == fftSize) {}
+	//else {
+	//	fftSize = newFFTsize;
+	//	fftOrder = std::log2(newFFTsize);
+	//	/* Resize fftH */
+	//	delete[] fftH;
+	//	fftH = new float[fftSize*2] {0};
+	//	/* Resize fftData */
+	//	delete[] fftData;
+	//	fftData = new float[fftSize*2] {0};
+	//}
 
     genFilter();
 }

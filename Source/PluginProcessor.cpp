@@ -47,7 +47,7 @@ MyAudioProcessor::MyAudioProcessor()
             std::make_unique<juce::AudioParameterFloat>(
                 "order",
                 "Order",
-                juce::NormalisableRange<float>(15.0f, 99.0f, 2.0f), 15.0f,
+                juce::NormalisableRange<float>(15.0f, 275.0f, 2.0f), 15.0f,
                 juce::String(),
                 juce::AudioProcessorParameter::genericParameter,
                 [](float value, int){ return juce::String(value); },
@@ -186,17 +186,41 @@ void MyAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     float newF2 = tree.getRawParameterValue("f2")->load();
     int newOrder = tree.getRawParameterValue("order")->load();
     int newMode = tree.getRawParameterValue("mode")->load();
+	fftH.resize(1024);
     for (int i = 0; i < mySynth.getNumVoices(); i++) {
         auto* myVoice = dynamic_cast<SynthVoice*>(mySynth.getVoice(i));
         myVoice->setLevel(tree.getRawParameterValue("level")->load());
-        if (myVoice->getF1() != newF1)
-            myVoice->setF1(newF1);
-        if (myVoice->getF2() != newF2)
-            myVoice->setF2(newF2);
-        if (myVoice->getOrder() != newOrder)
-            myVoice->setOrder(newOrder);
-        if (myVoice->getMode() != newMode)
-            myVoice->setMode(newMode);
+		if (myVoice->getF1() != newF1) {
+			myVoice->setF1(newF1);
+			for (int i = 0; i < 1024; i++)
+			{
+				fftH.at(i) = myVoice->getFilterResponse()[i];
+			}
+		}
+		if (myVoice->getF2() != newF2)
+		{
+			myVoice->setF2(newF2);
+			for (int i = 0; i < 1024; i++)
+			{
+				fftH.at(i) = myVoice->getFilterResponse()[i];
+			}
+		}
+		if (myVoice->getOrder() != newOrder)
+		{
+			myVoice->setOrder(newOrder);
+			for (int i = 0; i < 1024; i++)
+			{
+				fftH.at(i) = myVoice->getFilterResponse()[i];
+			}
+		}
+		if (myVoice->getMode() != newMode)
+		{
+			myVoice->setMode(newMode);
+			for (int i = 0; i < 1024; i++)
+			{
+				fftH.at(i) = myVoice->getFilterResponse()[i];
+			}
+		}
     }
     mySynth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
     singleChannelSampleFifo.update(buffer);

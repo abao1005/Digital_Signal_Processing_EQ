@@ -22,7 +22,7 @@ FrequencySpectrum::FrequencySpectrum(MyAudioProcessor &p)
 
 FrequencySpectrum::~FrequencySpectrum()
 {
-
+	
 }
 
 void FrequencySpectrum::paint(juce::Graphics &g)
@@ -34,6 +34,10 @@ void FrequencySpectrum::paint(juce::Graphics &g)
     drawBackgroundGrid(g);
     g.setColour(juce::Colours::white);
     g.strokePath(spectrumPath, juce::PathStrokeType(1.f));
+
+	g.setColour(juce::Colours::orange);
+	g.strokePath(responsePath, juce::PathStrokeType(2.f));
+
     drawTextLabels(g);
 }
 
@@ -45,7 +49,18 @@ void FrequencySpectrum::resized()
 void FrequencySpectrum::timerCallback()
 {
     generateSpectrum();
+	generateFilterResponse();
     repaint();
+}
+
+void FrequencySpectrum::generateFilterResponse()
+{
+	auto responseArea = getAnalysisArea().toFloat();
+
+	responsePathProducer.generateResponsePath(audioProcessor.fftH, responseArea, 1024, audioProcessor.getSampleRate() / 1024.0, getGains().front());
+	while (responsePathProducer.getNumPathsAvailable() > 0) {
+		responsePathProducer.getPath(responsePath);
+	}
 }
 
 void FrequencySpectrum::generateSpectrum()

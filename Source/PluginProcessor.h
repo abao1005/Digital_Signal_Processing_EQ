@@ -53,9 +53,10 @@ public:
     }
 
     juce::AudioProcessorValueTreeState tree;
+	std::vector<float> fftH;
     
 private:
-    juce::Synthesiser mySynth;
+	juce::Synthesiser mySynth;
     
     double lastSampleRate;
 

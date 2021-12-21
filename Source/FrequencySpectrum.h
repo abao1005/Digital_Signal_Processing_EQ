@@ -30,9 +30,13 @@ private:
     juce::AudioBuffer<float> pathBuffer;
     FFTDataGenerator<std::vector<float>> fftDataGenerator;
     FFTPathProducer<juce::Path> pathProducer;
-    juce::Path spectrumPath;
+	FFTPathProducer<juce::Path> responsePathProducer;
 
+    juce::Path spectrumPath;
+	juce::Path responsePath;
     void generateSpectrum();
+	void generateFilterResponse();
+
     void drawBackgroundGrid(juce::Graphics &);
     void drawTextLabels(juce::Graphics &);
 

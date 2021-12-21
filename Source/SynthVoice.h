@@ -33,6 +33,7 @@ public:
 	int getOrder() { return order; }
 	float getF1() { return f1; }
 	float getF2() { return f2; }
+	float* getFilterResponse() { return fftH_freqOnly; }
 
     void setLevel(float newLevel);
     void setMode(int newMode);
@@ -40,8 +41,8 @@ public:
 	void setF1(float newF1);
 	void setF2(float newF2);
 
-	//static constexpr auto fftOrder = 9;               // [1]
-	//static constexpr auto fftSize = 1 << fftOrder;     // [2]
+	static constexpr auto fftOrder = 10;
+	static constexpr auto fftSize = 1 << fftOrder; 
 
 
 private:
@@ -56,13 +57,12 @@ private:
     float level;
 	float f1, f2;
 
-	int fftOrder = 9;
-	int fftSize = 1 << fftOrder;
 	float* fftH;
+	float* fftH_freqOnly;
 	float* fftData;
 	float* overlap;
 
-	std::array<float, 200> h = { 0.0 };
+	std::array<float, 560> h = { 0.0 };
 	std::vector <float> x;  // input signal
 	std::vector <float> w;  // window function
 
